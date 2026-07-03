@@ -1,21 +1,21 @@
 # Project Warp Drive
 
-**Warp Drive using Casimir Arrays | 13.7km Warp Bubble | Negative Energy Field | FTL Interstellar Travel**
+**Creating the First Warp Bubble | Dynamic Warp Field | Casimir Array | Negative Energy | FTL Interstellar Travel**
 
 ---
 
 ## 🚀 Mission Overview
 
-This project aims to design a **practical warp drive** by generating a macroscopic negative energy field using **Casimir arrays**. The negative energy field will create a **13.7km diameter warp bubble**, enabling faster-than-light (FTL) interstellar travel.
+This project aims to create the **first sustainable warp bubble** — a dynamic spacetime distortion that enables faster-than-light (FTL) travel. The warp bubble is generated using **Casimir arrays** to produce a macroscopic negative energy field.
 
 | Parameter | Value |
 |:---|:---|
-| Warp Bubble Diameter | **13.7 km** |
-| Negative Energy Required | **-1.575 × 10¹⁵ J** |
-| Energy Source | **Dyson Swarm (Project Helios)** |
-| Time to Generate | **1 Year** |
+| Primary Goal | **Create the first sustainable warp bubble** |
+| Ultimate Goal | **1,500c Interstellar Travel** |
 | Key Technology | **Casimir Arrays + Field Cavity Stabilization** |
-| Target Speed | **Superluminal ( > c )** |
+| Energy Source | **Dyson Swarm (Project Helios)** |
+| Timeline | **10-15 Years** |
+| Target Destination | **Vega (26 light-years)** |
 
 ---
 
@@ -26,8 +26,8 @@ This project aims to design a **practical warp drive** by generating a macroscop
 | **Casimir Arrays** | Precision-engineered metal plates at nanoscale distances to generate negative energy density |
 | **Field Cavity Stabilization** | Mechanical field cavity to stabilize the negative energy field structure |
 | **Dynamic Field Feedback** | AI-controlled real-time energy injection to maintain the warp bubble |
-| **Dyson Swarm Power** | Unlimited energy supply from a Dyson Swarm (Project Helios) |
-| **AI Control** | Command Chain AI manages all operations |
+| **Scalable Design** | Start small (1m bubble), scale up to 1km+ for interstellar travel |
+| **Dyson Swarm Power** | Unlimited energy supply from a Dyson Swarm |
 
 ---
 
@@ -40,7 +40,7 @@ Field Cavity (Stabilization)
 ↓
 Dynamic Feedback (AI Maintenance)
 ↓
-Warp Bubble (13.7 km diameter)
+Warp Bubble (Dynamic, Scalable)
 ↓
 FTL Interstellar Travel
 
