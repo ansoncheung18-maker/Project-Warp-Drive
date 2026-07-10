@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 """
 Project Warp Drive - Phase A
-曲率泡生成與穩定性模擬
+曲率泡現實能量需求模擬 (保守版 v6.0)
 作者: Anson Cheung (14歲)
-日期: 2026-07-03
-目標: 模擬 Casimir 陣列 → 負能量場 → 場腔固定 → 動態反饋 → 曲率泡
-      驗證曲率泡能否被成功製造
+日期: 2026-07-10
+
+目標: 基於物理限制,模擬現實可行嘅曲率泡航行
+      - 速度上限: 3,000 c (保守)
+      - 考慮加速/巡航/減速模式
+      - 計算不同儲存時間下嘅可行距離
+      - 強調「現實可行」而唔係「理論極限」
 """
 
-import math
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
@@ -20,201 +23,275 @@ plt.rcParams['font.sans-serif'] = ['SimHei', 'DejaVu Sans', 'Arial Unicode MS']
 plt.rcParams['axes.unicode_minus'] = False
 
 print("=" * 70)
-print("曲率泡生成與穩定性模擬")
+print("曲率泡現實能量需求模擬 (保守版 v6.0)")
 print(f"執行日期: {datetime.now().strftime('%Y-%m-%d %H:%M')}")
 print("=" * 70)
 
 # ============================================================
-# 2. 參數設定 (現實估算)
+# 2. 參數設定 (保守)
 # ============================================================
 
-print("\n[1] 參數設定:")
+print("\n[1] 參數設定 (保守):")
 print("-" * 70)
 
-# Casimir 陣列參數
-ARRAY_SIZE = 3.0  # km
-PLATE_SPACING = 0.5  # nm
-CASIMIR_ENERGY_DENSITY = -1.3e-6  # J/m²
+# Casimir 陣列產能 (1km³)
+CASIMIR_OUTPUT = 1.66e36  # J/s
 
-AREA = (ARRAY_SIZE * 1000) ** 2
-PLATES_PER_DIMENSION = int(ARRAY_SIZE * 1e9 / PLATE_SPACING)
-CASIMIR_POWER = abs(CASIMIR_ENERGY_DENSITY) * AREA * PLATES_PER_DIMENSION
+# 時間單位 (秒)
+SECONDS_PER_DAY = 24 * 3600
+SECONDS_PER_MONTH = 30 * SECONDS_PER_DAY
+SECONDS_PER_YEAR = 365 * SECONDS_PER_DAY
 
-# 現實損耗參數
-EFFICIENCY_CASIMIR = 0.50
-EFFICIENCY_TRANSMISSION = 0.85
-EFFICIENCY_CAVITY = 0.85
-MECHANICAL_TOLERANCE = 0.10
-SAFETY_FACTOR = 3.0
+# 1 日、1 月、1 年產能
+ENERGY_1_DAY = CASIMIR_OUTPUT * SECONDS_PER_DAY
+ENERGY_1_MONTH = CASIMIR_OUTPUT * SECONDS_PER_MONTH
+ENERGY_1_YEAR = CASIMIR_OUTPUT * SECONDS_PER_YEAR
 
-effective_power = CASIMIR_POWER * EFFICIENCY_CASIMIR * EFFICIENCY_TRANSMISSION
-TARGET_ENERGY = 2.0e14 * SAFETY_FACTOR
+# 曲率泡基礎消耗 (1c 時)
+BASE_POWER = 1.0e10  # W
 
-# 模擬參數
-DT = 20  # 秒/步
-TIME_STEPS = 3000
-FORMATION_THRESHOLD = 0.80  # 80%
+# 物理限制 - 保守上限
+MAX_SPEED_CONSERVATIVE = 3000  # c
 
-print(f"  Casimir 陣列尺寸: {ARRAY_SIZE} km")
-print(f"  金屬板間距: {PLATE_SPACING} nm")
-print(f"  Casimir 現實產能: {effective_power:.2e} J/s")
-print(f"  目標能量: {TARGET_ENERGY:.2e} J")
-print(f"  形成門檻: {FORMATION_THRESHOLD*100}%")
-print(f"  DT: {DT} 秒/步")
-print(f"  TIME_STEPS: {TIME_STEPS}")
-print(f"  總模擬時間: {TIME_STEPS * DT / 3600:.1f} 小時")
+# 加速/減速參數
+ACCELERATION = 10  # c/s
+
+print(f"  Casimir 陣列產能: {CASIMIR_OUTPUT:.2e} J/s")
+print(f"  1 日產能: {ENERGY_1_DAY:.2e} J")
+print(f"  1 月產能: {ENERGY_1_MONTH:.2e} J")
+print(f"  1 年產能: {ENERGY_1_YEAR:.2e} J")
+print(f"  曲率泡基礎消耗 (1c): {BASE_POWER:.2e} W")
+print(f"  ⚠️ 速度上限 (保守): {MAX_SPEED_CONSERVATIVE} c")
+print(f"  加速度: {ACCELERATION} c/s")
 
 # ============================================================
-# 3. 模擬
+# 3. 加速/巡航/減速 能量計算
 # ============================================================
 
-negative_energy = 0.0
-field_stability = 1.0
-bubble_radius = 0.0
-speed = 0.0
-formation_time = 0
-formation_step = -1
-
-time_history = []
-energy_history = []
-stability_history = []
-
-print("\n[2] 模擬進行:")
+print("\n[2] 加速/巡航/減速 能量計算 (現實):")
 print("-" * 70)
 
-for step in range(TIME_STEPS):
-    t = step * DT
+def calculate_trip_energy(max_speed_c, distance_ly, acceleration):
+    """
+    計算完整旅程嘅能量消耗 (現實版)
+    包括: 加速段、巡航段、減速段
+    """
+    # 限制速度上限
+    if max_speed_c > MAX_SPEED_CONSERVATIVE:
+        max_speed_c = MAX_SPEED_CONSERVATIVE
     
-    # 產生負能量
-    negative_energy += effective_power * DT
+    # 加速段時間
+    accel_time = max_speed_c / acceleration
     
-    # 能量損耗
-    if negative_energy < 0:
-        loss = abs(negative_energy) * 0.01 * DT
-        negative_energy += loss
+    # 加速段距離
+    accel_distance_m = 0.5 * acceleration * 3.0e8 * accel_time**2
+    accel_distance_ly = accel_distance_m / (SECONDS_PER_YEAR * 3.0e8)
     
-    # 場腔穩定
-    if negative_energy < -1e10:
-        field_stability = min(1.0, field_stability + (1 - field_stability) * EFFICIENCY_CAVITY * DT * 0.01)
+    # 減速段 (同加速段對稱)
+    decel_time = accel_time
+    decel_distance_ly = accel_distance_ly
     
-    # 曲率泡形成 (用絕對值比較)
-    current_energy_abs = abs(negative_energy)
-    target_energy_abs = abs(TARGET_ENERGY)
+    # 巡航段距離
+    cruise_distance_ly = distance_ly - accel_distance_ly - decel_distance_ly
     
-    if bubble_radius == 0 and current_energy_abs >= target_energy_abs * FORMATION_THRESHOLD:
-        diameter = 1.0
-        speed = 100 * (1 / diameter) * EFFICIENCY_CAVITY * (1 - MECHANICAL_TOLERANCE)
-        bubble_radius = diameter / 2
-        formation_time = t
-        formation_step = step
-        print(f"\n  ✅✅✅ 第 {step} 步曲率泡成功形成！")
-        print(f"      時間: {t/3600:.2f} 小時")
-        print(f"      能量: {negative_energy:.2e} J (目標嘅 {current_energy_abs/target_energy_abs*100:.1f}%)")
-        print(f"      速度: {speed:.0f} c")
-        print(f"      穩定度: {field_stability:.3f}")
-        break
+    if cruise_distance_ly <= 0:
+        max_reachable = np.sqrt(distance_ly * acceleration / 2)
+        actual_max_speed = min(max_reachable, max_speed_c)
+        
+        accel_time = actual_max_speed / acceleration
+        accel_distance_m = 0.5 * acceleration * 3.0e8 * accel_time**2
+        accel_distance_ly = accel_distance_m / (SECONDS_PER_YEAR * 3.0e8)
+        decel_time = accel_time
+        decel_distance_ly = accel_distance_ly
+        cruise_distance_ly = 0
+        cruise_time = 0
+    else:
+        actual_max_speed = max_speed_c
+        cruise_time = cruise_distance_ly * SECONDS_PER_YEAR / actual_max_speed
     
-    if step % 100 == 0:
-        progress = current_energy_abs / target_energy_abs * 100
-        time_history.append(t)
-        energy_history.append(negative_energy)
-        stability_history.append(field_stability)
-        print(f"  第 {step:4d} 步: 能量 {negative_energy:.2e} J | 進度 {progress:.1f}% | 穩定度 {field_stability:.3f}")
-
-if bubble_radius == 0:
-    print("\n  ⚠️ 模擬結束，曲率泡未形成")
-    print(f"      最終能量: {negative_energy:.2e} J")
-    print(f"      目標能量: {TARGET_ENERGY:.2e} J")
+    # 能量消耗
+    avg_speed_accel = actual_max_speed / 2
+    accel_power_avg = BASE_POWER * avg_speed_accel
+    accel_energy = accel_power_avg * accel_time
+    
+    decel_power_avg = BASE_POWER * avg_speed_accel
+    decel_energy = decel_power_avg * decel_time
+    
+    cruise_power = BASE_POWER * actual_max_speed
+    cruise_energy = cruise_power * cruise_time
+    
+    total_energy = accel_energy + cruise_energy + decel_energy
+    
+    return {
+        'max_speed': actual_max_speed,
+        'accel_time': accel_time,
+        'accel_distance_ly': accel_distance_ly,
+        'cruise_time': cruise_time,
+        'cruise_distance_ly': cruise_distance_ly,
+        'decel_time': decel_time,
+        'decel_distance_ly': decel_distance_ly,
+        'total_time': accel_time + cruise_time + decel_time,
+        'total_energy': total_energy,
+        'accel_energy': accel_energy,
+        'cruise_energy': cruise_energy,
+        'decel_energy': decel_energy,
+    }
 
 # ============================================================
-# 4. 結論
+# 4. 主程式
+# ============================================================
+
+# 測試不同速度 (100 光年)
+print("\n[3] 不同速度下嘅能量需求 (100 光年):")
+print("-" * 70)
+
+test_speeds = [100, 500, 1000, 1500, 2000, 2500, 3000]
+
+print("| 速度 (c) | 最高速度 | 航行時間 | 總能量 | 需儲存時間 | 可行性 |")
+print("|:---|:---|:---|:---|:---|:---|")
+
+for speed in test_speeds:
+    result = calculate_trip_energy(speed, 100, ACCELERATION)
+    travel_time_days = result['total_time'] / SECONDS_PER_DAY
+    days_needed = result['total_energy'] / (CASIMIR_OUTPUT * SECONDS_PER_DAY)
+    
+    if speed <= 1500:
+        feasibility = "✅ 可行 (穩定)"
+    elif speed <= 3000:
+        feasibility = "✅ 可行 (保守)"
+    else:
+        feasibility = "⚠️ 理論極限"
+    
+    print(f"| {speed} | {result['max_speed']:.0f} c | {travel_time_days:.2f} 日 | {result['total_energy']:.2e} J | {days_needed:.2e} 日 | {feasibility} |")
+
+# ============================================================
+# 5. 實際星際航行場景
+# ============================================================
+
+print("\n[4] 實際星際航行場景 (保守速度 3,000c):")
+print("-" * 70)
+
+destinations = [
+    {"name": "比鄰星 (Proxima Centauri)", "distance": 4.24},
+    {"name": "織女星 (Vega)", "distance": 26},
+    {"name": "獵戶座星雲 (Orion Nebula)", "distance": 1344},
+    {"name": "銀河系中心 (Galactic Center)", "distance": 26000},
+    {"name": "仙女座星系 (Andromeda)", "distance": 2500000},
+]
+
+print("| 目的地 | 距離 (光年) | 速度 | 航行時間 | 所需能量 | 需儲存時間 |")
+print("|:---|:---|:---|:---|:---|:---|")
+
+for dest in destinations:
+    distance = dest["distance"]
+    result = calculate_trip_energy(3000, distance, ACCELERATION)
+    
+    travel_time_days = result['total_time'] / SECONDS_PER_DAY
+    days_needed = result['total_energy'] / (CASIMIR_OUTPUT * SECONDS_PER_DAY)
+    
+    print(f"| {dest['name']} | {distance:.2e} | {result['max_speed']:.0f} c | {travel_time_days:.2f} 日 | {result['total_energy']:.2e} J | {days_needed:.2e} 日 |")
+
+# ============================================================
+# 6. 最終結論
 # ============================================================
 
 print("\n" + "=" * 70)
-print("🎯 最終結論")
+print("🎯 最終結論 (v6.0 - 保守版)")
 print("=" * 70)
 
-if bubble_radius > 0:
-    print(f"""
-✅ 曲率泡成功形成！
+print("""
+📊 現實可行嘅速度範圍:
 
-📊 結果:
-   - 形成時間: {formation_time/3600:.2f} 小時
-   - 形成步數: 第 {formation_step} 步
-   - 形成能量: {negative_energy:.2e} J
-   - 場穩定性: {field_stability:.3f}
-   - 曲率泡速度: {speed:.0f} c
+  | 速度範圍 | 可行性 | 說明 |
+  |:---|:---|:---|
+  | 100 – 1,500 c | ✅ 可行 (穩定) | 能量充足,場穩定 |
+  | 1,500 – 3,000 c | ✅ 可行 (保守) | 需要更多能量,仍穩定 |
+  | 3,000 – 10,000 c | ⚠️ 理論極限 | 霍金輻射增加,不穩定 |
+  | > 10,000 c | ❌ 不現實 | 物理限制,無法維持 |
 
-📊 參數:
-   - 陣列尺寸: {ARRAY_SIZE} km
-   - 板間距: {PLATE_SPACING} nm
-   - 安全系數: {SAFETY_FACTOR} 倍
+📊 100 光年旅程 (保守速度 3,000c):
 
-🚀 結論: ✅ 曲率泡可以成功製造！
-""")
-else:
-    print(f"""
-⚠️ 曲率泡未能形成
+  | 儲存時間 | 航行時間 | 所需能量 | 需儲存時間 |
+  |:---|:---|:---|:---|
+  | 1 日 | 12.17 日 | 3.15 × 10¹⁹ J | 2.20 × 10⁻²² 日 |
 
-📊 最終狀態:
-   - 最終能量: {negative_energy:.2e} J
-   - 目標能量: {TARGET_ENERGY:.2e} J
-   - 進度: {abs(negative_energy/TARGET_ENERGY)*100:.1f}%
+📊 實際建議:
 
-建議:
-   - 增加 TIME_STEPS (3000 → 5000)
-   - 或降低形成門檻 (80% → 60%)
+  1. 將目標速度設定為 1,500 – 3,000 c
+  2. 儲存 1 日產能已足夠 100 光年內任何旅程
+  3. 曲率泡大小選擇 1km (平衡容量同消耗)
+  4. 採用「加速 → 巡航 → 減速」模式
+
+🚀 最終判定:
+
+  「基於物理限制,保守速度上限為 3,000 c。
+  1 日 Casimir 產能已足夠 100 光年內任何旅程。
+  能量完全唔係限制,速度同時間先係真正限制。
+  Warp Drive 嘅實際用途係『鄰近星系航行』(100-1,000 光年內)。」
 """)
 
 # ============================================================
-# 5. 儲存結果
+# 7. 儲存結果
 # ============================================================
 
 with open("warp_bubble_simulation_results.txt", "w", encoding="utf-8") as f:
     f.write("=" * 70 + "\n")
-    f.write("曲率泡生成與穩定性模擬結果\n")
+    f.write("曲率泡現實能量需求模擬結果 (保守版 v6.0)\n")
     f.write(f"執行日期: {datetime.now().strftime('%Y-%m-%d %H:%M')}\n")
     f.write("=" * 70 + "\n\n")
-    f.write(f"陣列尺寸: {ARRAY_SIZE} km\n")
-    f.write(f"板間距: {PLATE_SPACING} nm\n")
-    f.write(f"安全系數: {SAFETY_FACTOR} 倍\n")
-    f.write(f"形成時間: {formation_time/3600:.2f} 小時\n")
-    f.write(f"曲率泡速度: {speed:.0f} c\n")
-    f.write(f"場穩定性: {field_stability:.3f}\n")
-    f.write(f"曲率泡形成: {'✅ 是' if bubble_radius > 0 else '❌ 否'}\n")
+    f.write(f"速度上限 (保守): {MAX_SPEED_CONSERVATIVE} c\n")
+    f.write("100 光年旅程 (3,000c):\n")
+    result_100 = calculate_trip_energy(3000, 100, ACCELERATION)
+    f.write(f"  航行時間: {result_100['total_time']/SECONDS_PER_DAY:.2f} 日\n")
+    f.write(f"  所需能量: {result_100['total_energy']:.2e} J\n")
+    f.write(f"  需儲存時間: {result_100['total_energy']/(CASIMIR_OUTPUT*SECONDS_PER_DAY):.2e} 日\n")
     f.write("=" * 70 + "\n")
 
 print("\n[結果] 已儲存至: warp_bubble_simulation_results.txt")
 
 # ============================================================
-# 6. 圖表
+# 8. 圖表
 # ============================================================
 
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+fig.suptitle('曲率泡現實能量需求模擬 (保守版 v6.0)', fontsize=14)
 
-# 圖1: 負能量累積
+# 圖 1: 速度 vs 航行時間 (100 光年)
 ax1 = axes[0]
-if time_history:
-    ax1.plot(time_history, energy_history, 'b-', linewidth=2)
-ax1.axhline(y=-TARGET_ENERGY * FORMATION_THRESHOLD, color='orange', linestyle='--', label=f'形成門檻 ({FORMATION_THRESHOLD*100}%)')
-ax1.axhline(y=-TARGET_ENERGY, color='r', linestyle='--', label=f'目標 (-{TARGET_ENERGY:.1e} J)')
-if bubble_radius > 0:
-    ax1.axvline(x=formation_time, color='g', linestyle='--', label=f'形成 ({formation_time/3600:.2f}h)')
-ax1.set_xlabel('時間 (秒)')
-ax1.set_ylabel('負能量 (J)')
-ax1.set_title('負能量累積')
+speeds_plot = np.array([100, 500, 1000, 1500, 2000, 2500, 3000])
+times_plot = []
+for speed in speeds_plot:
+    result = calculate_trip_energy(speed, 100, ACCELERATION)
+    times_plot.append(result['total_time'] / SECONDS_PER_DAY)
+ax1.plot(speeds_plot, times_plot, 'b-', linewidth=2, marker='o')
+ax1.axvline(x=1500, color='g', linestyle='--', label='穩定範圍 (1,500c)')
+ax1.axvline(x=3000, color='orange', linestyle='--', label='保守上限 (3,000c)')
+ax1.set_xlabel('速度 (c)')
+ax1.set_ylabel('航行時間 (日)')
+ax1.set_title('速度 vs 航行時間 (100 光年)')
 ax1.legend()
 ax1.grid(True, alpha=0.3)
 
-# 圖2: 場穩定性
+# 圖 2: 速度剖面圖
 ax2 = axes[1]
-if stability_history:
-    ax2.plot(time_history, stability_history, 'g-', linewidth=2)
-ax2.axhline(y=0.85, color='r', linestyle='--', label='穩定閾值 (0.85)')
-ax2.set_xlabel('時間 (秒)')
-ax2.set_ylabel('場穩定性')
-ax2.set_title('場腔固定效果')
-ax2.legend()
+time_profile = np.linspace(0, 1, 100)
+speed_profile = []
+accel_time_ratio = 0.01
+decel_time_ratio = 0.01
+cruise_time_ratio = 0.98
+
+for t in time_profile:
+    if t < accel_time_ratio:
+        speed_profile.append(t / accel_time_ratio)
+    elif t < accel_time_ratio + cruise_time_ratio:
+        speed_profile.append(1.0)
+    else:
+        speed_profile.append(1.0 - (t - accel_time_ratio - cruise_time_ratio) / decel_time_ratio)
+
+ax2.plot(time_profile, speed_profile, 'r-', linewidth=2)
+ax2.set_xlabel('時間 (正規化)')
+ax2.set_ylabel('速度 (正規化)')
+ax2.set_title('加速 → 巡航 → 減速 剖面 (現實版)')
 ax2.grid(True, alpha=0.3)
 
 plt.tight_layout()
