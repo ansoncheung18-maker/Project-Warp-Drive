@@ -1,0 +1,31 @@
+# 曲率泡專案 Phase C：CAD 圖紙
+
+**版本：1.0**  
+**更新日期：2026-07-10**  
+**工具：Meshy AI（Text to 3D）**
+
+
+## 1. 3D 模型連結
+
+使用 Meshy AI 生成嘅曲率泡 3D 模型：
+
+🔗 [Meshy 模型連結]
+https://www.meshy.ai/s/G8HBv3
+
+
+## 2. 模型說明
+
+| 參數 | 數值 |
+|:---|:---|
+| 直徑 | 1 公里 |
+| 形狀 | 球體 / 橢球體 |
+| 結構類型 | 時空扭曲場（無實體結構） |
+| 視覺特徵 | 光線彎曲、透鏡效應、能量脈衝 |
+| 內部空間 | 平坦，可容納太空飛船 |
+
+
+## 3. 生成方式
+
+- 平台：Meshy AI
+- 功能：Text to 3D
+- 提示詞：Generate a 3D model of a warp bubble, a 1km diameter semi-transparent sphere floating in space, with light bending around the edges, gravitational lensing effect, blue-purple energy pulses on the surface, sci-fi style, cinematic lighting, deep space background, stars distorted into ring patterns around the bubble.
